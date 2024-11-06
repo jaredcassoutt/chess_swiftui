@@ -12,7 +12,7 @@ enum PieceType: String {
     case pawn, knight, bishop, rook, queen, king
 }
 
-enum PieceColor: String {
+enum PieceColor: String, Equatable {
     case white, black
 
     var opponent: PieceColor {
@@ -27,6 +27,15 @@ struct ChessPiece {
     var hasMoved: Bool = false // To track pawn's initial move
 }
 
+struct PromotionPending: Equatable {
+    let position: (Int, Int)
+    let color: PieceColor
+
+    static func == (lhs: PromotionPending, rhs: PromotionPending) -> Bool {
+        return lhs.position == rhs.position && lhs.color == rhs.color
+    }
+}
+
 class ChessGame: ObservableObject {
     @Published var board: [[ChessPiece?]] = Array(repeating: Array(repeating: nil, count: 8), count: 8)
     @Published var selectedPiece: ChessPiece?
@@ -34,7 +43,7 @@ class ChessGame: ObservableObject {
     @Published var isInCheck: Bool = false
     @Published var isCheckmate: Bool = false
     @Published var isStalemate: Bool = false // Added stalemate tracking
-    @Published var promotionPending: (position: (Int, Int), color: PieceColor)?
+    @Published var promotionPending: PromotionPending?
     @Published var currentPlayer: PieceColor = .white
 
     // Track castling rights
@@ -432,13 +441,27 @@ class ChessGame: ObservableObject {
         let startRow = piece.position.0
         let startCol = piece.position.1
 
-        // Handle En passant capture
-        if piece.type == .pawn,
-           position.1 != startCol,
-           board[position.0][position.1] == nil {
-            // Capturing En passant
-            let captureRow = piece.color == .white ? position.0 - 1 : position.0 + 1
-            board[captureRow][position.1] = nil
+        // Inside performMove function
+        if piece.type == .pawn {
+            // If pawn moved two steps, set En passant target
+            if abs(position.0 - startRow) == 2 {
+                enPassantTarget = (position: position, color: piece.color)
+            }
+
+            if (piece.color == .white && position.0 == 7) ||
+                (piece.color == .black && position.0 == 0) {
+                // Pawn reaches the opposite side
+                if piece.color == .white {
+                    promotionPending = PromotionPending(position: position, color: piece.color)
+                } else {
+                    // Automatically promote opponent's pawn to queen
+                    board[position.0][position.1] = ChessPiece(
+                        type: .queen,
+                        color: piece.color,
+                        position: position
+                    )
+                }
+            }
         }
 
         // Handle castling move
@@ -495,7 +518,7 @@ class ChessGame: ObservableObject {
             if (piece.color == .white && position.0 == 7) ||
                 (piece.color == .black && position.0 == 0) {
                 // Pawn reaches the opposite side
-                promotionPending = (position, piece.color)
+                promotionPending = PromotionPending(position: position, color: piece.color)
             }
         }
 

@@ -123,6 +123,13 @@ struct ChessView: View {
                 showGameOverAlert = true
             }
         }
+        .onChange(of: game.promotionPending) { _ in
+            if let promotion = game.promotionPending, promotion.color == .white {
+                showPromotionSheet = true
+            } else {
+                showPromotionSheet = false
+            }
+        }
         .alert(isPresented: $showGameOverAlert) {
             Alert(
                 title: Text("Game Over"),
