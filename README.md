@@ -19,7 +19,7 @@ A full-featured chess game built with SwiftUI, where you can play against AI opp
 
 2. Open the Project in Xcode:
     - Open Chess.xcodeproj in Xcode.
-    - Make sure you’re running Xcode 12 or later.
+    - Make sure you’re running Xcode 16 or later. The app runs on iOS 18 and later.
 3. Run the App:
     - Build and run on the simulator or an actual device.
     - Select a difficulty and start playing!
